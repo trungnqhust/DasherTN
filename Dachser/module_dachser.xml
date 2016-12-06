@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="module_dachser" default="compile.module.dachser">
+  <dirname property="module.dachser.basedir" file="${ant.file.module_dachser}"/>
+  
+  <property name="module.jdk.home.dachser" value="${project.jdk.home}"/>
+  <property name="module.jdk.bin.dachser" value="${project.jdk.bin}"/>
+  <property name="module.jdk.classpath.dachser" value="${project.jdk.classpath}"/>
+  
+  <property name="compiler.args.dachser" value="-encoding UTF-8 -source 8 -target 8 ${compiler.args}"/>
+  
+  <property name="dachser.output.dir" value="${module.dachser.basedir}/out/production/Dachser"/>
+  <property name="dachser.testoutput.dir" value="${module.dachser.basedir}/out/test/Dachser"/>
+  
+  <path id="dachser.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="dachser.module.production.classpath">
+    <path refid="${module.jdk.classpath.dachser}"/>
+  </path>
+  
+  <path id="dachser.runtime.production.module.classpath">
+    <pathelement location="${dachser.output.dir}"/>
+  </path>
+  
+  <path id="dachser.module.classpath">
+    <path refid="${module.jdk.classpath.dachser}"/>
+    <pathelement location="${dachser.output.dir}"/>
+  </path>
+  
+  <path id="dachser.runtime.module.classpath">
+    <pathelement location="${dachser.testoutput.dir}"/>
+    <pathelement location="${dachser.output.dir}"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.module.dachser">
+    <patternset refid="ignored.files"/>
+  </patternset>
+  
+  <patternset id="excluded.from.compilation.dachser">
+    <patternset refid="excluded.from.module.dachser"/>
+  </patternset>
+  
+  <path id="dachser.module.sourcepath">
+    <dirset dir="${module.dachser.basedir}">
+      <include name="src"/>
+    </dirset>
+  </path>
+  
+  
+  <target name="compile.module.dachser" depends="compile.module.dachser.production,compile.module.dachser.tests" description="Compile module Dachser"/>
+  
+  <target name="compile.module.dachser.production" depends="register.custom.compilers" description="Compile module Dachser; production classes">
+    <mkdir dir="${dachser.output.dir}"/>
+    <javac2 destdir="${dachser.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true" executable="${module.jdk.bin.dachser}/javac">
+      <compilerarg line="${compiler.args.dachser}"/>
+      <bootclasspath refid="dachser.module.bootclasspath"/>
+      <classpath refid="dachser.module.production.classpath"/>
+      <src refid="dachser.module.sourcepath"/>
+      <patternset refid="excluded.from.compilation.dachser"/>
+    </javac2>
+    
+    <copy todir="${dachser.output.dir}">
+      <fileset dir="${module.dachser.basedir}/src">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="compile.module.dachser.tests" depends="register.custom.compilers,compile.module.dachser.production" description="compile module Dachser; test classes" unless="skip.tests"/>
+  
+  <target name="clean.module.dachser" description="cleanup module">
+    <delete dir="${dachser.output.dir}"/>
+    <delete dir="${dachser.testoutput.dir}"/>
+  </target>
+</project>
