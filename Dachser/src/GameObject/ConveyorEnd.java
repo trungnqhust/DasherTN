@@ -42,6 +42,7 @@ public class ConveyorEnd extends ConveyorFixed {
 
     public void addToStack(ColorBox colorBox) {
         stackColor.push(colorBox);
+        this.color = colorBox;
     }
 
     public LogicPoint getLogicPoint() {
@@ -78,9 +79,11 @@ public class ConveyorEnd extends ConveyorFixed {
         } else {
             this.color = ColorBox.WHITE;
         }
-        loadImageByColor(this.color);
         return this.color;
     }
 
-
+    @Override
+    public void update() {
+        loadImageByColor(this.color);
+    }
 }

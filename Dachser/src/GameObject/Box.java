@@ -30,13 +30,14 @@ public class Box extends GameObject {
         return direction;
     }
 
-    public Box(LogicPoint lp, ColorBox color, int level) {
+    public Box(LogicPoint lp, ColorBox color, int level, Direction d) {
         Point p = lp.convertToPoint();
         p = new Point(p.x + 42 - 6 - 12, p.y + 62 - 3 - 48);
         realX = posX = p.x;
         realY = posY = p.y;
         logicPointToCheck = LogicPoint.convertPointToLogicPoint(new Point(posX + OFFSET_X, posY + OFFSET_Y));
         this.color = color;
+        this.direction = d;
         loadImage();
 //        try {
 //            this.sprite = ImageIO.read(new File("resource/play button/pink_box.png"));
@@ -46,11 +47,12 @@ public class Box extends GameObject {
         speed = 0.02 + level * 0.003;
     }
 
-    public Box(int x, int y, ColorBox color, int level) {
+    public Box(int x, int y, ColorBox color, int level, Direction d) {
         realX = posX = x;
         realY = posY = y;
-
+        logicPointToCheck = LogicPoint.convertPointToLogicPoint(new Point(x, y));
         this.color = color;
+        this.direction = d;
         loadImage();
 //        try {
 //            this.sprite = ImageIO.read(new File("resource/play button/pink_box.png"));
@@ -70,11 +72,6 @@ public class Box extends GameObject {
         int y = posY + OFFSET_Y;
         int xRaw, yRaw;
         LogicPoint lpRaw;
-
-//        LogicPoint logicPointToCheck = LogicPoint.convertPointToLogicPoint(new Point(x, y));
-//        Point map = logicPointToCheck.convertToPoint();
-//        int midMapX = map.x + 42;
-//        int midMapY = map.y + 62;
 
         switch (direction) {
             case UP:
@@ -184,19 +181,11 @@ public class Box extends GameObject {
     @Override
     public void draw(Graphics g) {
         super.draw(g);
-        g.drawImage(sprite, posX, posY, null);
     }
 
     @Override
     public void update() {
         super.update();
-        if (isAllowedToCheck) {
-            changeDirection();
-        }
-    }
-
-    private void changeDirection() {
-
     }
 
     @Override

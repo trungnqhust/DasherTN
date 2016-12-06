@@ -20,7 +20,7 @@ public class ConveyorXEnd extends ConveyorEnd {
     }
 
     public void update() {
-//        super.update();
+        super.update();
         //animation.update();
     }
 

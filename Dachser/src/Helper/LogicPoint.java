@@ -17,21 +17,21 @@ public class LogicPoint {
         int x = point.x;
         int y = point.y;
         LogicPoint logicPoint = new LogicPoint(point.x, point.y);
-        logicPoint.logicX = (2 * (y - baseY) + (x - baseX))/72;
-        logicPoint.logicY = (2 * (y - baseY) - (x - baseX))/72;
+        logicPoint.logicX = (2 * (y - baseY) + (x - baseX)) / 72;
+        logicPoint.logicY = (2 * (y - baseY) - (x - baseX)) / 72;
         return logicPoint;
     }
 
-    public LogicPoint(){
-        this.logicX = 0;
-        this.logicY = 0;
+    public LogicPoint() {
+        this(0, 0);
     }
+
     public LogicPoint(int logicX, int logicY) {
         this.logicX = logicX;
         this.logicY = logicY;
     }
 
-    public Point convertToPoint(){
+    public Point convertToPoint() {
         int baseImageX = baseX - offsetX;
         int baseImageY = baseY - offsetY;
         Point point = new Point();
@@ -40,6 +40,7 @@ public class LogicPoint {
         point.y = baseImageY + 18 * (logicX + logicY);
         return point;
     }
+
     public int getLogicX() {
         return logicX;
     }
@@ -47,7 +48,6 @@ public class LogicPoint {
     public int getLogicY() {
         return logicY;
     }
-
 
 
 //    public static void main(String[] args) {

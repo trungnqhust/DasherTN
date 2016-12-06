@@ -120,7 +120,7 @@ public class CreateMapScreen extends Screens.Screen {
         treeRect = makeRect(14);
         tree1Rect = makeRect(15);
 
-        backRect = new Rectangle(1200, pointO.y, this.buttonSize.width, this.buttonSize.height);
+        backRect = new Rectangle(1220, pointO.y, this.buttonSize.width, this.buttonSize.height);
     }
 
     private Rectangle makeRect(int i) {

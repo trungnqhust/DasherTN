@@ -67,7 +67,7 @@ public class GameWindow extends Frame implements Runnable{
     void gameLoop(){
         while (true) {
             try {
-//                gameUpdate();
+                gameUpdate();
                 repaint();
                 Thread.sleep(17);
             } catch (InterruptedException e) {

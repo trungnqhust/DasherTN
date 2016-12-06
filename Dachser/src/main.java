@@ -1,6 +1,7 @@
 import Game.GameWindow;
 
 import java.io.IOException;
+import java.util.Random;
 
 /**
  * Created by Hoangelato on 01/11/2016.

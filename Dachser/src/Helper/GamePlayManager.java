@@ -6,8 +6,8 @@ package Helper;
 
 
 import GameObject.*;
-import sun.rmi.runtime.Log;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
@@ -20,46 +20,52 @@ import static GameObject.ColorBox.*;
  * Created by Hoangelato on 01/12/2016.
  */
 public class GamePlayManager {
-    public Conveyor[][] conveyorList = new Conveyor[36][36];
+    public Conveyor[][] conveyor = new Conveyor[36][36];
     public Vector<ConveyorSwitch> conveyorSwitchList = new Vector<ConveyorSwitch>();
     public Vector<ConveyorEnd> validConveyorEndList = new Vector<ConveyorEnd>();
     public BufferedImage truck, plane, ship, tree, tree1, water, road, source;
 
     public int map[][];
-    private int numberofBoxes;
-    private int numberofValidEnds;
+    private int maxNumberOfBoxesOnMap = 0; //tuy thuoc vao so End con can nhan box
+    private int numberOfBoxes;
     public int time;
     private int level;
+    int nextBoxTime = 2000;
+    int countTime = 0;
+
     Random random = new Random();
 
     public Stack<Box> boxWaitingList = new Stack<Box>();
-    ;
-    public Vector<Box> boxOnMapList;
+    public Vector<Box> boxOnMapList = new Vector<Box>();
     //
-    public int score;
-    LogicPoint sourceLogicPoint;
+    public int score = 0;
+    LogicPoint startBoxLogicPoint;
 
-    public Box box1;
 
     public GamePlayManager(File mapFile) {
+        for (int i = 0; i < 36; i++) {
+            for (int j = 0; j < 36; j++) {
+                conveyor[i][j] = new Conveyor(0, 0);
+            }
+        }
 
         loadMap(mapFile);
-//        getImagesForMap();
+        getImagesForMap();
 
 
     }
 
     public static ColorBox convertIndexToColor(int index) {
         switch (index) {
-            case 1:
+            case 0:
                 return BLUE;
-            case 2:
+            case 1:
                 return GREEN;
-            case 3:
+            case 2:
                 return RED;
-            case 4:
+            case 3:
                 return YELLOW;
-            case 5:
+            case 4:
                 return PINK;
             default:
                 return WHITE;
@@ -68,11 +74,23 @@ public class GamePlayManager {
     }
 
 
-
-
     public void update() {
     }
 
+    public void getImagesForMap() {
+        try {
+            truck = ImageIO.read(new File("resource/Create map button/Map_truck.png"));
+            plane = ImageIO.read(new File("resource/Create map button/Map_plane.png"));
+            ship = ImageIO.read(new File("resource/Create map button/Map_ship.png"));
+            tree = ImageIO.read(new File("resource/Create map button/Map_tree.png"));
+            tree1 = ImageIO.read(new File("resource/Create map button/Map_tree_1.png"));
+            water = ImageIO.read(new File("resource/Create map button/Map_water.png"));
+            road = ImageIO.read(new File("resource/Create map button/Map_road.png"));
+            source = ImageIO.read(new File("resource/Create map button/Map_truck.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     private void loadMap(File mapFile) {
         map = new int[36][36];
@@ -81,8 +99,8 @@ public class GamePlayManager {
             FileReader f = new FileReader(mapFile);
             BufferedReader reader = new BufferedReader(f);
 
-            numberofBoxes = Integer.parseInt(reader.readLine());
             time = Integer.parseInt(reader.readLine());
+            numberOfBoxes = Integer.parseInt(reader.readLine());
             level = Integer.parseInt(reader.readLine());
             int j = 0;
             String line = reader.readLine();
@@ -108,14 +126,17 @@ public class GamePlayManager {
                     if (map[i][j] != 0 && map[i][j] != 100) {
                         if (getDirectionFromMapCode(map[i][j]) != Direction.NONE) {
                             Conveyor conveyorToAdd = getConveyorFromMapCode(map[i][j], point.x, point.y);
-                            conveyorList[i][j] = conveyorToAdd;
+                            conveyor[i][j] = conveyorToAdd;
                             if (isSwitch(conveyorToAdd)) conveyorSwitchList.add((ConveyorSwitch) conveyorToAdd);
-//                            conveyorList.add(conveyorToAdd);
-                            if (isEnd(conveyorToAdd) && checkValidEnd(i, j))
+//                            conveyor.add(conveyorToAdd);
+                            if (isEnd(conveyorToAdd) && isValidEnd(i, j)) {
                                 validConveyorEndList.add((ConveyorEnd) conveyorToAdd);
+                            }
+
+
                         }
                     }
-                    if (map[i][j] == SOURCE) sourceLogicPoint = new LogicPoint(lp.getLogicX() + 1, lp.getLogicY());
+                    if (map[i][j] == SOURCE) startBoxLogicPoint = startBoxLogicPoint(i, j);
                 }
             }
         }
@@ -126,6 +147,23 @@ public class GamePlayManager {
 
     }
 
+    private LogicPoint startBoxLogicPoint(int i, int j) {
+        if (map[i][j - 1] == CONVEYOR_UP) {
+            return new LogicPoint(i, j - 1);
+        }
+        if (map[i][j + 1] == CONVEYOR_DOWN) {
+            return new LogicPoint(i, j + 1);
+        }
+        if (map[i + 1][j] == CONVEYOR_RIGHT) {
+            return new LogicPoint(i + 1, j);
+        }
+        if (map[i - 1][j] == CONVEYOR_LEFT) {
+            return new LogicPoint(i - 1, j);
+        }
+        return new LogicPoint();
+
+    }
+
     public void getProbableDirectionForAllSwitches() {
         for (ConveyorSwitch conveyorSwitch : conveyorSwitchList) {
             getProbableDirection(conveyorSwitch);
@@ -133,27 +171,32 @@ public class GamePlayManager {
     }
 
     private void startBoxManager() {
-        for (int i = 0; i < numberofBoxes; i++) {
-            int r = random.nextInt(6);
+        for (int i = 0; i < numberOfBoxes; i++) {
+            int r = random.nextInt(5);
             ColorBox colorBox = GamePlayManager.convertIndexToColor(r);
             int index = i % validConveyorEndList.size();
             validConveyorEndList.get(index).addToStack(colorBox);
         }
 
-        for (int i = 0; i < validConveyorEndList.size(); i++) {
-            ConveyorEnd conveyorEnd = validConveyorEndList.get(i);
+        for (ConveyorEnd conveyorEnd : validConveyorEndList) {
             if (conveyorEnd.getStackColor().empty()) {
                 conveyorEnd.setColor(WHITE);
             } else {
                 conveyorEnd.setColor(conveyorEnd.getStackColor().peek());
-                Box box = new Box(sourceLogicPoint, conveyorEnd.getColor(), level);
+            }
+        }
+        Collections.shuffle(validConveyorEndList);
+        for (ConveyorEnd conveyorEnd : validConveyorEndList) {
+            if (conveyorEnd.getColor() != WHITE) {
+                int mapCode = map[startBoxLogicPoint.getLogicX()][startBoxLogicPoint.getLogicY()];
+                Box box = new Box(startBoxLogicPoint, conveyorEnd.getColor(), level, getDirectionFromMapCode(mapCode));
                 boxWaitingList.push(box);
+                maxNumberOfBoxesOnMap++;
             }
         }
         for (Box box : boxWaitingList) {
             updateDirectionForBox(box);
         }
-
     }
 
     private boolean isExistPTS(int mapCode) {
@@ -161,7 +204,7 @@ public class GamePlayManager {
         return false;
     }
 
-    private boolean checkValidEnd(int i, int j) {
+    private boolean isValidEnd(int i, int j) {
         switch (map[i][j]) {
             case END_DOWN:
                 return isExistPTS(map[i][j + 1]);
@@ -169,8 +212,8 @@ public class GamePlayManager {
                 return isExistPTS(map[i][j - 1]);
             case END_LEFT:
                 return isExistPTS(map[i - 1][j]);
-            case END_LEFT:
-                return isExistPTS(map[+1][j]);
+            case END_RIGHT:
+                return isExistPTS(map[i + 1][j]);
             default:
                 return false;
         }
@@ -190,9 +233,6 @@ public class GamePlayManager {
 //        }
 //    }
 
-    int nextBoxTime = 2000;
-    int countTime = 0;
-
 
     public void makeBox() {
         countTime += 17;
@@ -201,11 +241,9 @@ public class GamePlayManager {
 //        while (countTime <= makeBoxTime){
 
 //        }
-        System.out.println(countTime + "     " + nextBoxTime);
 
-        if (!boxWaitingList.isEmpty() && boxOnMapList.size() < numberofBoxes && countTime > nextBoxTime) {
-            boxOnMapList.add(boxWaitingList.poll());
-
+        if (!boxWaitingList.isEmpty() && boxOnMapList.size() < maxNumberOfBoxesOnMap && countTime > nextBoxTime) {
+            boxOnMapList.add(boxWaitingList.pop());
             countTime = 0;
             nextBoxTime = (int) (Math.round(Math.random() * 2000) + 3000);
         }
@@ -220,30 +258,58 @@ public class GamePlayManager {
     }
 
     public void checkBoxToEnd() {
-        for (Box box : boxOnMapList) {
+        for (int i = 0; i < boxOnMapList.size(); i++) {
+            Box box = boxOnMapList.get(i);
             LogicPoint position = box.getLogicPoint();
-            switch (map[position.getLogicX()][position.getLogicY()]) {
+            int mapCode = map[position.getLogicX()][position.getLogicY()];
+            switch (mapCode) {
                 case END_DOWN:
                 case END_LEFT:
                 case END_RIGHT:
                 case END_UP:
-                    for (ConveyorEnd conveyorEnd : validConveyorEndList) {
-                        LogicPoint conveyorPosition = conveyorEnd.getLogicPoint()
-                        if ((conveyorPosition.getLogicX() == position.getLogicX()) && (conveyorPosition.getLogicY() == position.getLogicY())) {
-
+                    ConveyorEnd conveyorEnd = (ConveyorEnd) conveyor[position.getLogicX()][position.getLogicY()];
+                    if (box.getColor() == conveyorEnd.getColor()) {
+                        boxOnMapList.removeElementAt(i);
+                        score += 10;
+                        System.out.println("cong diem");
+                        ColorBox nextColor = conveyorEnd.nextColorNeedToReceive();
+                        if (nextColor != WHITE) {
+                            boxWaitingList.push(new Box(startBoxLogicPoint, nextColor, level, getDirectionFromMapCode(mapCode)));
                         } else {
-                            boxOnMapList.
-                                    boxWaitingList.add(box);
+                            maxNumberOfBoxesOnMap--;
                         }
-                    }
-            }
-            if (box.isAllowedToCheck) {
-                box.setDirection(getDirectionFromMapCode(map[box.getLogicPoint().getLogicX()][box.getLogicPoint().getLogicY()]));
-            }
-            box.checkToChangDirection();
-        }
-    }
+                    } else {
+                        boxWaitingList.push(new Box(startBoxLogicPoint, box.getColor(), level, getDirectionFromMapCode(mapCode)));
+                        if (score >= 10) {
+                            score -= 10;
+                        }
+                        boxOnMapList.removeElementAt(i);
 
+                    }
+
+//                    for (ConveyorEnd conveyorEnd : validConveyorEndList) {
+//                        LogicPoint conveyorPosition = conveyorEnd.getLogicPoint();
+//                        if ((conveyorPosition.getLogicX() == position.getLogicX())
+//                                && (conveyorPosition.getLogicY() == position.getLogicY())) {
+//                            if(box.getColor() == conveyorEnd.getColor()) {
+//                                boxOnMapList.removeElementAt(i);
+//                                score += 100;
+//                                ColorBox nextColor = conveyorEnd.nextColorNeedToReceive();
+//                                if (nextColor != WHITE) {
+//                                    boxWaitingList.push(new Box(startBoxLogicPoint, nextColor, level));
+//                                }
+//                            }else {
+//                                boxOnMapList.removeElementAt(i);
+//                            }
+//                        }
+            }
+        }
+//            if (box.isAllowedToCheck) {
+//                box.setDirection(getDirectionFromMapCode(map[box.getLogicPoint().getLogicX()][box.getLogicPoint().getLogicY()]));
+//            }
+//            box.checkToChangDirection();
+//        }
+    }
 
 
     private boolean isSwitch(Conveyor c) {
@@ -255,7 +321,6 @@ public class GamePlayManager {
         if ((c instanceof ConveyorXEnd) || (c instanceof ConveyorYEnd)) return true;
         return false;
     }
-
 
 
     void getProbableDirection(ConveyorSwitch conveyorSwitch) {
